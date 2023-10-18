@@ -52,12 +52,15 @@ class ACO(Base):
         sum_num = sum(selection)
         if sum_num == 0:
             return len(selection) - 1
-        tmp_num = random()
+        tmp_num = 0
+        best_i = 0
         prob = 0
         for i in range(len(selection)):
-            prob += selection[i] / sum_num
+            prob = selection[i] / sum_num
             if prob >= tmp_num:
-                return i
+                best_i = i
+                tmp_num = prob
+        return best_i
 
     def __create_indx(self, dm: list[list[float]], pm: list[list[float]]) -> list[int]:
         """Creates a new ordering of 2D point indices based on the distance and pheromone."""
@@ -73,6 +76,7 @@ class ACO(Base):
                 selection.append(
                     (pm[i][j] ** self.a) * ((1 / max(dm[i][j], 10**-5)) ** self.b)
                 )
+            # отвечает за выбор муравьём каждой последующей точки маршрута внутри функции create_indx()
             selected_i = ACO.__select_i(selection)
             visited_indx.append(unvisited_indx.pop(selected_i))
         visited_indx.append(visited_indx[0])
@@ -84,14 +88,12 @@ class ACO(Base):
         l = len(pm)
         for i in range(l):
             for j in range(i, l):
-                pm[i][j] *= 1 - self.p
-                pm[j][i] *= 1 - self.p
+                pm[i][j] *= (1 - self.p)
         for i in range(self.ants):
             delta = self.q / tmp_leng[i]
             indx = tmp_indx[i]
             for j in range(l):
                 pm[indx[j]][indx[j + 1]] += delta
-                pm[indx[j + 1]][indx[j]] += delta
 
     def run(self, points: list[tuple[int]], name: str = None) -> Path:
         """Runs the algorithm for the given 2D points."""
@@ -105,6 +107,7 @@ class ACO(Base):
             tmp_indx = []
             tmp_leng = []
             for _ in range(self.ants):
+                #формирует маршрут муравья (список индексов точек) и подсчитывает длину
                 indx = self.__create_indx(dm, pm)
                 tmp_indx.append(indx)
                 tmp_leng.append(ACO._calculate_dist(dm, indx))
